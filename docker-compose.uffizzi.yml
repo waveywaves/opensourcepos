@@ -1,0 +1,51 @@
+version: '3'
+
+x-uffizzi:
+  ingress:
+      service: ospos
+      port: 80
+
+volumes:
+    uploads:
+    logs:
+    mysql:
+
+services:
+    sqlscript:
+        image: jekkos/opensourcepos:sqlscript
+        command: /bin/sh -c 'exit 0'
+    ospos:
+        image: "${OSPOS_IMAGE}"
+        restart: always
+        depends_on:
+          - mysql
+        ports:
+          - "80:80"
+        volumes:
+          - uploads:/app/public/uploads
+          - logs:/app/application/logs
+        environment:
+          - CI_ENV=production
+          - FORCE_HTTPS=false
+          - PHP_TIMEZONE=UTC
+          - MYSQL_USERNAME=admin
+          - MYSQL_PASSWORD=pointofsale
+          - MYSQL_DB_NAME=ospos
+          - MYSQL_HOST_NAME=localhost
+
+    mysql:
+        image: mariadb:10.5
+        container_name: mysql
+        restart: always
+        expose:
+          - "3306"
+        volumes:
+          - mysql:/var/lib/mysql:rw
+          - uploads:/app/public/uploads
+          - logs:/app/application/logs
+        environment:
+          - MYSQL_ROOT_PASSWORD=pointofsale
+          - MYSQL_DATABASE=ospos
+          - MYSQL_USER=admin
+          - MYSQL_PASSWORD=pointofsale
+
